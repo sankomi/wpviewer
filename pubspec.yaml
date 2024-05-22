@@ -1,0 +1,14 @@
+name: wpviewer
+description: view wordpress site!
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
