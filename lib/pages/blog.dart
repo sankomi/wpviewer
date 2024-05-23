@@ -1,6 +1,30 @@
-import "package:flutter/material.dart";
+import "dart:async";
+import "dart:convert";
 
-class Blog extends StatelessWidget {
+import "package:flutter/material.dart";
+import "package:http/http.dart" as http;
+import "package:flutter_dotenv/flutter_dotenv.dart";
+import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
+
+class Blog extends StatefulWidget {
+
+	@override
+	State<Blog> createState() => _BlogState();
+
+}
+
+class _BlogState extends State<Blog> {
+
+	late Future<http.Response> _postsFuture;
+
+	@override
+	void initState() {
+		String wpUrl = dotenv.env["WP_URL"] ?? "";
+		String url = wpUrl + "/wp-json/wp/v2/posts";
+		setState(() {
+			_postsFuture = http.get(Uri.parse(url));
+		});
+	}
 
 	@override
 	Widget build(BuildContext context) {
@@ -11,18 +35,37 @@ class Blog extends StatelessWidget {
 				backgroundColor: Theme.of(context).colorScheme.primary,
 				centerTitle: true,
 			),
-			body: ListView.separated(
-				itemCount: 20,
-				itemBuilder: (BuildContext context, int index) {
-					return Post(
-						title: "title " + (index + 1).toString(),
-						excerpt: "excerpt " + (index + 1).toString(),
-					);
+			body: FutureBuilder<http.Response>(
+				future: _postsFuture,
+				builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
+					if (snapshot.connectionState == ConnectionState.done) {
+						http.Response? res = snapshot.data;
+						if (res != null && res.statusCode == 200) {
+							List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
+
+							return ListView.separated(
+								itemCount: data.length,
+								itemBuilder: (BuildContext context, int index) {
+									Map<String, dynamic> post = data[index];
+									String title = post["title"]["rendered"];
+									String excerpt = post["excerpt"]["rendered"];
+									return Post(
+										title: title,
+										excerpt: excerpt,
+									);
+								},
+								separatorBuilder: (BuildContext context, int index) {
+									return SizedBox(height: 10);
+								},
+								padding: EdgeInsets.all(10),
+							);
+						} else {
+							return Text("error!");
+						}
+					} else {
+						return Text("fetching posts...");
+					}
 				},
-				separatorBuilder: (BuildContext context, int index) {
-					return SizedBox(height: 10);
-				},
-				padding: EdgeInsets.all(10),
 			),
 		);
 	}
@@ -57,9 +100,9 @@ class Post extends StatelessWidget {
 							title,
 							style: Theme.of(context).textTheme.bodyLarge,
 						),
-						Text(
+						HtmlWidget(
 							excerpt,
-							style: Theme.of(context).textTheme.bodyMedium,
+							textStyle: Theme.of(context).textTheme.bodyMedium,
 						),
 					],
 				),
