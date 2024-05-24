@@ -1,10 +1,13 @@
 import "dart:async";
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
+
+import "post.dart";
 
 class Blog extends StatefulWidget {
 
@@ -31,53 +34,55 @@ class _BlogState extends State<Blog> {
 		return Scaffold(
 			appBar: AppBar(
 				title: Text("blog"),
-				titleTextStyle: Theme.of(context).textTheme.titleMedium,
-				backgroundColor: Theme.of(context).colorScheme.primary,
-				centerTitle: true,
 			),
-			body: FutureBuilder<http.Response>(
-				future: _postsFuture,
-				builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
-					if (snapshot.connectionState == ConnectionState.done) {
-						http.Response? res = snapshot.data;
-						if (res != null && res.statusCode == 200) {
-							List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
+			body: Container(
+				child: FutureBuilder<http.Response>(
+					future: _postsFuture,
+					builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
+						if (snapshot.connectionState == ConnectionState.done) {
+							http.Response? res = snapshot.data;
+							if (res != null && res.statusCode == 200) {
+								List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
 
-							return ListView.separated(
-								itemCount: data.length,
-								itemBuilder: (BuildContext context, int index) {
-									Map<String, dynamic> post = data[index];
-									String title = post["title"]["rendered"];
-									String excerpt = post["excerpt"]["rendered"];
-									return Post(
-										title: title,
-										excerpt: excerpt,
-									);
-								},
-								separatorBuilder: (BuildContext context, int index) {
-									return SizedBox(height: 10);
-								},
-								padding: EdgeInsets.all(10),
-							);
+								return ListView.separated(
+									itemCount: data.length,
+									itemBuilder: (BuildContext context, int index) {
+										Map<String, dynamic> post = data[index];
+										String title = post["title"]["rendered"];
+										String slug = post["slug"];
+										String excerpt = post["excerpt"]["rendered"];
+										return PostItem(
+											title: title,
+											slug: slug,
+											excerpt: excerpt,
+										);
+									},
+									separatorBuilder: (BuildContext context, int index) {
+										return SizedBox(height: 10);
+									},
+								);
+							} else {
+								return Center(child: Text("error!"));
+							}
 						} else {
-							return Text("error!");
+							return Center(child: Text("fetching posts..."));
 						}
-					} else {
-						return Text("fetching posts...");
-					}
-				},
+					},
+				),
+				padding: EdgeInsets.all(10),
 			),
 		);
 	}
 
 }
 
-class Post extends StatelessWidget {
+class PostItem extends StatelessWidget {
 
 	String title;
+	String slug;
 	String excerpt;
 
-	Post({required this.title, required this.excerpt});
+	PostItem({required String this.title, required String this.slug, required String this.excerpt});
 
 	@override
 	Widget build(BuildContext context) {
@@ -113,7 +118,31 @@ class Post extends StatelessWidget {
 				),
 				padding: EdgeInsets.all(0),
 			),
-			onPressed: () => print("hello"),
+			onPressed: () {
+				Duration duration = Duration(milliseconds: 500);
+
+				Navigator.push(context, PageRouteBuilder(
+					pageBuilder: (context, animation, secondaryAnimation) => Post(slug: slug),
+					transitionDuration: duration,
+					reverseTransitionDuration: duration,
+					transitionsBuilder: (context, animation, secondaryAnimation, child) {
+						Offset begin = Offset(1.0, 0.0);
+						Offset end = Offset.zero;
+						Tween<Offset> tween = Tween(begin: begin, end: end);
+						CurveTween curveTween = CurveTween(curve: Curves.ease);
+						Animatable<Offset> enter = tween.chain(curveTween);
+						Animatable<Offset> leave = ReverseTween(tween).chain(curveTween);
+
+						return SlideTransition(
+							position: secondaryAnimation.drive(leave),
+							child: SlideTransition(
+								position: animation.drive(enter),
+								child: child,
+							),
+						);
+					}
+				));
+			},
 		);
 	}
 
