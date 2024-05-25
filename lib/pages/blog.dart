@@ -1,13 +1,11 @@
 import "dart:async";
-import "dart:convert";
-import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:http/http.dart" as http;
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
 
 import "post.dart";
+import "../utils/request.dart";
 
 class Blog extends StatefulWidget {
 
@@ -18,14 +16,15 @@ class Blog extends StatefulWidget {
 
 class _BlogState extends State<Blog> {
 
-	late Future<http.Response> _postsFuture;
+	late Future<List<dynamic>> _postsFuture;
 
 	@override
 	void initState() {
 		String wpUrl = dotenv.env["WP_URL"] ?? "";
 		String url = wpUrl + "/wp-json/wp/v2/posts";
 		setState(() {
-			_postsFuture = http.get(Uri.parse(url));
+			_postsFuture = Request.get(url)
+				.then((data) => data as List<dynamic>);
 		});
 	}
 
@@ -36,13 +35,14 @@ class _BlogState extends State<Blog> {
 				title: Text("blog"),
 			),
 			body: Container(
-				child: FutureBuilder<http.Response>(
+				child: FutureBuilder<List<dynamic>>(
 					future: _postsFuture,
-					builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
-							http.Response? res = snapshot.data;
-							if (res != null && res.statusCode == 200) {
-								List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
+							if (snapshot.data == null) {
+								return Center(child: Text("error!"));
+							} else {
+								List<dynamic> data = snapshot.data!;
 
 								return ListView.separated(
 									itemCount: data.length,
@@ -61,11 +61,9 @@ class _BlogState extends State<Blog> {
 										return SizedBox(height: 10);
 									},
 								);
-							} else {
-								return Center(child: Text("error!"));
 							}
 						} else {
-							return Center(child: Text("fetching posts..."));
+							return Center(child: CircularProgressIndicator());
 						}
 					},
 				),

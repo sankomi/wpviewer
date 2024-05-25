@@ -1,10 +1,10 @@
 import "dart:async";
-import "dart:convert";
 
 import "package:flutter/material.dart";
-import "package:http/http.dart" as http;
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
+
+import "../utils/request.dart";
 
 class Post extends StatefulWidget {
 
@@ -19,14 +19,15 @@ class Post extends StatefulWidget {
 
 class _PostState extends State<Post> {
 
-	late Future<http.Response> _postFuture;
+	late Future<List<dynamic>> _postFuture;
 
 	@override
 	void initState() {
 		String wpUrl = dotenv.env["WP_URL"] ?? "";
 		String url = wpUrl + "/wp-json/wp/v2/posts?slug=${widget.slug}";
 		setState(() {
-			_postFuture = http.get(Uri.parse(url));
+			_postFuture = Request.get(url)
+				.then((data) => data as List<dynamic>);
 		});
 	}
 
@@ -34,18 +35,17 @@ class _PostState extends State<Post> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: FutureBuilder<http.Response>(
+				title: FutureBuilder<List<dynamic>>(
 					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
-							http.Response? res = snapshot.data;
-							if (res != null && res.statusCode == 200) {
-								List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
-								Map<String, dynamic> post = data[0] as Map<String, dynamic>;
-
-								return Text(post["title"]["rendered"]);
-							} else {
+							if (snapshot.data == null) {
 								return Text("error!");
+							} else {
+								List<dynamic> data = snapshot.data!;
+
+								Map<String, dynamic> post = data[0] as Map<String, dynamic>;
+								return Text(post["title"]["rendered"]);
 							}
 						} else {
 							return Text("fectching post...");
@@ -54,23 +54,22 @@ class _PostState extends State<Post> {
 				),
 			),
 			body: Container(
-				child: FutureBuilder<http.Response>(
+				child: FutureBuilder<List<dynamic>>(
 					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<http.Response> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
-							http.Response? res = snapshot.data;
-							if (res != null && res.statusCode == 200) {
-								List<dynamic> data = jsonDecode(res.body) as List<dynamic>;
-								Map<String, dynamic> post = data[0] as Map<String, dynamic>;
+							if (snapshot.data == null) {
+								return Center(child: Text("error!"));
+							} else {
+								List<dynamic> data = snapshot.data!;
 
+								Map<String, dynamic> post = data[0] as Map<String, dynamic>;
 								return SingleChildScrollView(
 									child: HtmlWidget(post["content"]["rendered"]),
 								);
-							} else {
-								return Center(child: Text("error!"));
 							}
 						} else {
-							return Center(child: Text("fetching post..."));
+							return Center(child: CircularProgressIndicator());
 						}
 					},
 				),
