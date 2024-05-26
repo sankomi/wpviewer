@@ -129,14 +129,10 @@ class PostItem extends StatelessWidget {
 						Tween<Offset> tween = Tween(begin: begin, end: end);
 						CurveTween curveTween = CurveTween(curve: Curves.ease);
 						Animatable<Offset> enter = tween.chain(curveTween);
-						Animatable<Offset> leave = ReverseTween(tween).chain(curveTween);
 
 						return SlideTransition(
-							position: secondaryAnimation.drive(leave),
-							child: SlideTransition(
-								position: animation.drive(enter),
-								child: child,
-							),
+							position: animation.drive(enter),
+							child: child,
 						);
 					}
 				));

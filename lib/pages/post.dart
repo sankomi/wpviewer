@@ -65,7 +65,40 @@ class _PostState extends State<Post> {
 
 								Map<String, dynamic> post = data[0] as Map<String, dynamic>;
 								return SingleChildScrollView(
-									child: HtmlWidget(post["content"]["rendered"]),
+									child: HtmlWidget(
+										post["content"]["rendered"],
+										onTapUrl: (url) {
+											String wpUrl = dotenv.env["WP_URL"] ?? "";
+											if (!url.startsWith(wpUrl)) return false;
+
+											String slug = url.substring(wpUrl.length)
+												.split("/")
+												.where((segment) => segment != "")
+												.last;
+
+											Duration duration = Duration(milliseconds: 500);
+
+											Navigator.push(context, PageRouteBuilder(
+												pageBuilder: (context, animation, secondaryAnimation) => Post(slug: slug),
+												transitionDuration: duration,
+												reverseTransitionDuration: duration,
+												transitionsBuilder: (context, animation, secondaryAnimation, child) {
+													Offset begin = Offset(1.0, 0.0);
+													Offset end = Offset.zero;
+													Tween<Offset> tween = Tween(begin: begin, end: end);
+													CurveTween curveTween = CurveTween(curve: Curves.ease);
+													Animatable<Offset> enter = tween.chain(curveTween);
+
+													return SlideTransition(
+														position: animation.drive(enter),
+														child: child,
+													);
+												}
+											));
+
+											return true;
+										},
+									),
 								);
 							}
 						} else {
