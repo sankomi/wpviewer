@@ -4,9 +4,12 @@ import "package:flutter/material.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 
 import "pages/blog.dart";
+import "utils/wp.dart";
 
 void main() async {
 	await dotenv.load();
+	Wp.url = dotenv.env["WP_URL"];
+
 	runApp(WpViewer());
 }
 

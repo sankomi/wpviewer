@@ -1,11 +1,10 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
-import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
 
 import "post.dart";
-import "../utils/request.dart";
+import "../utils/wp.dart";
 
 class Blog extends StatefulWidget {
 
@@ -16,15 +15,12 @@ class Blog extends StatefulWidget {
 
 class _BlogState extends State<Blog> {
 
-	late Future<List<dynamic>> _postsFuture;
+	late Future<List<Map<String, dynamic>>?> _postsFuture;
 
 	@override
 	void initState() {
-		String wpUrl = dotenv.env["WP_URL"] ?? "";
-		String url = wpUrl + "/wp-json/wp/v2/posts";
 		setState(() {
-			_postsFuture = Request.get(url)
-				.then((data) => data as List<dynamic>);
+			_postsFuture = Wp.getPosts();
 		});
 	}
 
@@ -35,14 +31,14 @@ class _BlogState extends State<Blog> {
 				title: Text("blog"),
 			),
 			body: Container(
-				child: FutureBuilder<List<dynamic>>(
+				child: FutureBuilder<List<Map<String, dynamic>>?>(
 					future: _postsFuture,
-					builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>?> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
 							if (snapshot.data == null) {
 								return Center(child: Text("error!"));
 							} else {
-								List<dynamic> data = snapshot.data!;
+								List<Map<String, dynamic>> data = snapshot.data!;
 
 								return ListView.separated(
 									itemCount: data.length,
