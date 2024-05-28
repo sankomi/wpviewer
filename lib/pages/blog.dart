@@ -3,7 +3,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
 
-import "post.dart";
+import "single.dart";
 import "../utils/wp.dart";
 
 class Blog extends StatefulWidget {
@@ -15,7 +15,7 @@ class Blog extends StatefulWidget {
 
 class _BlogState extends State<Blog> {
 
-	late Future<List<Map<String, dynamic>>?> _postsFuture;
+	late Future<List<Post>?> _postsFuture;
 
 	@override
 	void initState() {
@@ -31,26 +31,23 @@ class _BlogState extends State<Blog> {
 				title: Text("blog"),
 			),
 			body: Container(
-				child: FutureBuilder<List<Map<String, dynamic>>?>(
+				child: FutureBuilder<List<Post>?>(
 					future: _postsFuture,
-					builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>?> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<List<Post>?> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
 							if (snapshot.data == null) {
 								return Center(child: Text("error!"));
 							} else {
-								List<Map<String, dynamic>> data = snapshot.data!;
+								List<Post> data = snapshot.data!;
 
 								return ListView.separated(
 									itemCount: data.length,
 									itemBuilder: (BuildContext context, int index) {
-										Map<String, dynamic> post = data[index];
-										String title = post["title"]["rendered"];
-										String slug = post["slug"];
-										String excerpt = post["excerpt"]["rendered"];
+										Post post = data[index];
 										return PostItem(
-											title: title,
-											slug: slug,
-											excerpt: excerpt,
+											title: post.title,
+											slug: post.slug,
+											excerpt: post.excerpt,
 										);
 									},
 									separatorBuilder: (BuildContext context, int index) {
@@ -116,7 +113,7 @@ class PostItem extends StatelessWidget {
 				Duration duration = Duration(milliseconds: 500);
 
 				Navigator.push(context, PageRouteBuilder(
-					pageBuilder: (context, animation, secondaryAnimation) => Post(slug: slug),
+					pageBuilder: (context, animation, secondaryAnimation) => Single(slug: slug),
 					transitionDuration: duration,
 					reverseTransitionDuration: duration,
 					transitionsBuilder: (context, animation, secondaryAnimation, child) {

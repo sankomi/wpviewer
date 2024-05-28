@@ -1,6 +1,9 @@
 import "dart:async";
 
 import "request.dart";
+import "../models/post.dart";
+
+export "../models/post.dart" show Post;
 
 class Wp {
 
@@ -10,20 +13,23 @@ class Wp {
 		_wpUrl = url;
 	}
 
-	static Future<List<Map<String, dynamic>>?> getPosts({int page = 1, int perPage = 10}) async {
+	static Future<List<Post>?> getPosts({int page = 1, int perPage = 10}) async {
 		if (_wpUrl == null) return null;
 		String wpUrl = _wpUrl!;
 
 		String url = wpUrl + "/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}";
-		return await Request.get(url)
+		List<Map<String, dynamic>> list = await Request.get(url)
 			.then((res) => res.data as List<dynamic>)
 			.then((list) {
 				return list.map((item) => item as Map<String, dynamic>)
 					.toList();
 			});
+
+		return list.map((json) => Post.fromJson(json))
+			.toList();
 	}
 
-	static Future<Map<String, dynamic>?> getPost({required String slug}) async {
+	static Future<Post?> getPost({required String slug}) async {
 		if (_wpUrl == null) return null;
 		String wpUrl = _wpUrl!;
 
@@ -33,7 +39,9 @@ class Wp {
 
 		if (data.length == 0) return null;
 
-		return data.first as Map<String, dynamic>;
+		Map<String, dynamic> json = data.first as Map<String, dynamic>;
+
+		return Post.fromJson(json);
 	}
 
 	static String? getSlug(String url) {

@@ -5,20 +5,20 @@ import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
 
 import "../utils/wp.dart";
 
-class Post extends StatefulWidget {
+class Single extends StatefulWidget {
 
-	Post({required String this.slug});
+	Single({required String this.slug});
 
 	String slug;
 
 	@override
-	State<Post> createState() => _PostState();
+	State<Single> createState() => _SingleState();
 
 }
 
-class _PostState extends State<Post> {
+class _SingleState extends State<Single> {
 
-	late Future<Map<String, dynamic>?> _postFuture;
+	late Future<Post?> _postFuture;
 
 	@override
 	void initState() {
@@ -31,15 +31,15 @@ class _PostState extends State<Post> {
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: FutureBuilder<Map<String, dynamic>?>(
+				title: FutureBuilder<Post?>(
 					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>?> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<Post?> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
 							if (snapshot.data == null) {
 								return Text("error!");
 							} else {
-								Map<String, dynamic> post = snapshot.data!;
-								return Text(post["title"]["rendered"]);
+								Post post = snapshot.data!;
+								return Text(post.title);
 							}
 						} else {
 							return Text("fectching post...");
@@ -48,18 +48,18 @@ class _PostState extends State<Post> {
 				),
 			),
 			body: Container(
-				child: FutureBuilder<Map<String, dynamic>?>(
+				child: FutureBuilder<Post?>(
 					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>?> snapshot) {
+					builder: (BuildContext context, AsyncSnapshot<Post?> snapshot) {
 						if (snapshot.connectionState == ConnectionState.done) {
 							if (snapshot.data == null) {
 								return Center(child: Text("error!"));
 							} else {
-								Map<String, dynamic> post = snapshot.data!;
+								Post post = snapshot.data!;
 
 								return SingleChildScrollView(
 									child: HtmlWidget(
-										post["content"]["rendered"],
+										post.content,
 										onTapUrl: (url) {
 											String? slug = Wp.getSlug(url);
 											if (slug == null) return false;
@@ -67,7 +67,7 @@ class _PostState extends State<Post> {
 											Duration duration = Duration(milliseconds: 500);
 
 											Navigator.push(context, PageRouteBuilder(
-												pageBuilder: (context, animation, secondaryAnimation) => Post(slug: slug!),
+												pageBuilder: (context, animation, secondaryAnimation) => Single(slug: slug!),
 												transitionDuration: duration,
 												reverseTransitionDuration: duration,
 												transitionsBuilder: (context, animation, secondaryAnimation, child) {
