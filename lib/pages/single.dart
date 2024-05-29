@@ -3,6 +3,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_widget_from_html/flutter_widget_from_html.dart";
 
+import "blog.dart";
 import "../utils/wp.dart";
 
 class Single extends StatefulWidget {
@@ -45,6 +46,52 @@ class _SingleState extends State<Single> {
 							return Text("fectching post...");
 						}
 					},
+				),
+			),
+			endDrawer: Drawer(
+				child: ListView(
+					children: [
+						Container(
+							padding: EdgeInsets.symmetric(vertical: 40),
+							child: TextButton(
+								child: Text(
+									"blog",
+									style: Theme.of(context).textTheme.bodyLarge,
+								),
+								style: TextButton.styleFrom(
+									shape: RoundedRectangleBorder(
+										borderRadius: BorderRadius.zero,
+									),
+									padding: EdgeInsets.all(20),
+								),
+								onPressed: () {
+									Duration duration = Duration(milliseconds: 500);
+
+									Navigator.pushAndRemoveUntil(
+										context,
+										PageRouteBuilder(
+											pageBuilder: (context, animation, secondaryAnimation) => Blog(),
+											transitionDuration: duration,
+											reverseTransitionDuration: duration,
+											transitionsBuilder: (context, animation, secondaryAnimation, child) {
+												Offset begin = Offset(1.0, 0.0);
+												Offset end = Offset.zero;
+												Tween<Offset> tween = Tween(begin: begin, end: end);
+												CurveTween curveTween = CurveTween(curve: Curves.ease);
+												Animatable<Offset> enter = tween.chain(curveTween);
+
+												return SlideTransition(
+													position: animation.drive(enter),
+													child: child,
+												);
+											}
+										),
+										(Route<dynamic> route) => false,
+									);
+								},
+							),
+						),
+					],
 				),
 			),
 			body: Container(
