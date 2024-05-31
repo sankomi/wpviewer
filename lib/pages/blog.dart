@@ -8,23 +8,7 @@ import "../utils/wp.dart";
 import "../utils/routes.dart";
 import "../components/menu.dart";
 
-class Blog extends StatefulWidget {
-
-	@override
-	State<Blog> createState() => _BlogState();
-
-}
-
-class _BlogState extends State<Blog> {
-
-	late Future<List<Post>?> _postsFuture;
-
-	@override
-	void initState() {
-		setState(() {
-			_postsFuture = Wp.getPosts();
-		});
-	}
+class Blog extends StatelessWidget {
 
 	@override
 	Widget build(BuildContext context) {
@@ -34,38 +18,102 @@ class _BlogState extends State<Blog> {
 			),
 			endDrawer: Menu(),
 			body: Container(
-				child: FutureBuilder<List<Post>?>(
-					future: _postsFuture,
-					builder: (BuildContext context, AsyncSnapshot<List<Post>?> snapshot) {
-						if (snapshot.connectionState == ConnectionState.done) {
-							if (snapshot.data == null) {
-								return Center(child: Text("error!"));
-							} else {
-								List<Post> data = snapshot.data!;
-
-								return ListView.separated(
-									itemCount: data.length,
-									itemBuilder: (BuildContext context, int index) {
-										Post post = data[index];
-										return PostItem(
-											title: post.title,
-											slug: post.slug,
-											excerpt: post.excerpt,
-										);
-									},
-									separatorBuilder: (BuildContext context, int index) {
-										return SizedBox(height: 10);
-									},
-								);
-							}
-						} else {
-							return Center(child: CircularProgressIndicator());
-						}
-					},
-				),
+				child: PostList(),
 				padding: EdgeInsets.all(10),
 			),
 		);
+	}
+
+}
+
+class PostList extends StatefulWidget {
+
+	@override
+	State<PostList> createState() => _PostListState();
+
+}
+
+class _PostListState extends State<PostList> {
+
+	int _currentPage = 1;
+	bool _loading = false;
+	bool _more = true;
+	List<Post> _posts = [];
+
+	@override
+	void initState() {
+		loadMore();
+	}
+
+	void loadMore() async {
+		if (_loading) return;
+		setState(() => _loading = true);
+
+		List<Post>? fetched = await Wp.getPosts(page: _currentPage);
+
+		if (fetched != null) {
+			setState(() {
+				_posts.addAll(fetched);
+				_currentPage++;
+
+				_more = _posts.last.pages >= _currentPage;
+				_loading = false;
+			});
+		}
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		if (_posts.length > 0) {
+			return ListView.separated(
+				itemCount: _posts.length + (_more? 1: 0),
+				itemBuilder: (BuildContext context, int index) {
+					if (index < _posts.length) {
+						Post post = _posts[index];
+						return PostItem(
+							title: post.title,
+							slug: post.slug,
+							excerpt: post.excerpt,
+						);
+					} else {
+						if (_loading) {
+							return Center(
+								child: Container(
+									child: CircularProgressIndicator(),
+									margin: EdgeInsets.all(15),
+								),
+							);
+						} else {
+							return TextButton(
+								child: Container(
+									child: Center(child: Text("more")),
+									width: MediaQuery.of(context).size.width,
+									padding: EdgeInsets.all(15),
+									decoration: BoxDecoration(
+										border: Border.all(
+											width: 1,
+											color: Color(0xffcccccc),
+										),
+									),
+								),
+								style: TextButton.styleFrom(
+									shape: RoundedRectangleBorder(
+										borderRadius: BorderRadius.zero,
+									),
+									padding: EdgeInsets.all(0),
+								),
+								onPressed: () => loadMore(),
+							);
+						}
+					}
+				},
+				separatorBuilder: (BuildContext context, int index) {
+					return SizedBox(height: 10);
+				},
+			);
+		} else {
+			return Center(child: CircularProgressIndicator());
+		}
 	}
 
 }

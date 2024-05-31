@@ -19,10 +19,15 @@ class Wp {
 
 		String url = wpUrl + "/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}";
 		List<Map<String, dynamic>> list = await Request.get(url)
-			.then((res) => res.data as List<dynamic>)
-			.then((list) {
-				return list.map((item) => item as Map<String, dynamic>)
-					.toList();
+			.then((res) {
+				int pages = int.parse(res.headers["x-wp-totalpages"] as String) ?? 0;
+				List<dynamic> list = res.data as List<dynamic>;
+
+				return list.map((item) {
+					Map<String, dynamic> map = item as Map<String, dynamic>;
+					map["pages"] = pages;
+					return map;
+				}).toList();
 			});
 
 		return list.map((json) => Post.fromJson(json))
