@@ -40,13 +40,26 @@ class _PostListState extends State<PostList> {
 	bool _more = true;
 	List<Post> _posts = [];
 
+	ScrollController _scrollController = ScrollController();
+
 	@override
 	void initState() {
 		loadMore();
+		_scrollController.addListener(onScroll);
+	}
+
+	void onScroll() {
+		if (_scrollController.hasClients) {
+			if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+				loadMore();
+			}
+		} else {
+			loadMore();
+		}
 	}
 
 	void loadMore() async {
-		if (_loading) return;
+		if (_loading || !_more) return;
 		setState(() => _loading = true);
 
 		List<Post>? fetched = await Wp.getPosts(page: _currentPage);
@@ -59,57 +72,52 @@ class _PostListState extends State<PostList> {
 				_more = _posts.last.pages >= _currentPage;
 				_loading = false;
 			});
+
+			onScroll();
 		}
+	}
+
+	Future<void> refresh() async {
+		_currentPage = 1;
+		_more = true;
+		_posts.clear();
+
+		loadMore();
 	}
 
 	@override
 	Widget build(BuildContext context) {
 		if (_posts.length > 0) {
-			return ListView.separated(
-				itemCount: _posts.length + (_more? 1: 0),
-				itemBuilder: (BuildContext context, int index) {
-					if (index < _posts.length) {
-						Post post = _posts[index];
-						return PostItem(
-							title: post.title,
-							slug: post.slug,
-							excerpt: post.excerpt,
-						);
-					} else {
-						if (_loading) {
-							return Center(
-								child: Container(
-									child: CircularProgressIndicator(),
-									margin: EdgeInsets.all(15),
-								),
+			return RefreshIndicator(
+				onRefresh: refresh,
+				child: ListView.separated(
+					controller: _scrollController,
+					itemCount: _posts.length + (_more? 1: 0),
+					itemBuilder: (BuildContext context, int index) {
+						if (index < _posts.length) {
+							Post post = _posts[index];
+							return PostItem(
+								title: post.title,
+								slug: post.slug,
+								excerpt: post.excerpt,
 							);
 						} else {
-							return TextButton(
-								child: Container(
-									child: Center(child: Text("more")),
-									width: MediaQuery.of(context).size.width,
-									padding: EdgeInsets.all(15),
-									decoration: BoxDecoration(
-										border: Border.all(
-											width: 1,
-											color: Color(0xffcccccc),
-										),
+							if (_loading) {
+								return Center(
+									child: Container(
+										child: CircularProgressIndicator(),
+										margin: EdgeInsets.all(15),
 									),
-								),
-								style: TextButton.styleFrom(
-									shape: RoundedRectangleBorder(
-										borderRadius: BorderRadius.zero,
-									),
-									padding: EdgeInsets.all(0),
-								),
-								onPressed: () => loadMore(),
-							);
+								);
+							} else {
+								return SizedBox();
+							}
 						}
-					}
-				},
-				separatorBuilder: (BuildContext context, int index) {
-					return SizedBox(height: 10);
-				},
+					},
+					separatorBuilder: (BuildContext context, int index) {
+						return SizedBox(height: 10);
+					},
+				),
 			);
 		} else {
 			return Center(child: CircularProgressIndicator());

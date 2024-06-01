@@ -1,6 +1,7 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:flutter/gestures.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 
 import "pages/blog.dart";
@@ -37,6 +38,8 @@ class WpViewer extends StatelessWidget {
 
 		return MaterialApp(
 			home: Blog(),
+			scrollBehavior: MaterialScrollBehavior()
+				.copyWith(dragDevices: PointerDeviceKind.values.toSet()),
 			theme: ThemeData(
 				textTheme: textTheme,
 				appBarTheme: appBarTheme,

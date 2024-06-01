@@ -19,7 +19,7 @@ class Post {
 			slug: json["slug"],
 			excerpt: json["excerpt"]["rendered"],
 			content: json["content"]["rendered"],
-			pages: json["pages"],
+			pages: json["pages"] ?? 0,
 		);
 	}
 
