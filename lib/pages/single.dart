@@ -10,9 +10,14 @@ import "../components/menu.dart";
 
 class Single extends StatefulWidget {
 
-	Single({required String this.slug});
+	Single({required String this.slug, bool this.page = false});
+
+	Single.home():
+		this.slug = Wp.homeSlug ?? "home",
+		this.page = true;
 
 	String slug;
+	bool page;
 
 	@override
 	State<Single> createState() => _SingleState();
@@ -26,7 +31,11 @@ class _SingleState extends State<Single> {
 	@override
 	void initState() {
 		setState(() {
-			_postFuture = Wp.getPost(slug: widget.slug);
+			if (widget.page) {
+				_postFuture = Wp.getPage(slug: widget.slug);
+			} else {
+				_postFuture = Wp.getPost(slug: widget.slug);
+			}
 		});
 	}
 

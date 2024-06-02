@@ -4,12 +4,14 @@ import "package:flutter/material.dart";
 import "package:flutter/gestures.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 
+import "pages/single.dart";
 import "pages/blog.dart";
 import "utils/wp.dart";
 
 void main() async {
 	await dotenv.load();
 	Wp.url = dotenv.env["WP_URL"];
+	Wp.homeSlug = dotenv.env["HOME_SLUG"];
 
 	runApp(WpViewer());
 }
@@ -37,7 +39,7 @@ class WpViewer extends StatelessWidget {
 		);
 
 		return MaterialApp(
-			home: Blog(),
+			home: Single.home(),
 			scrollBehavior: MaterialScrollBehavior()
 				.copyWith(dragDevices: PointerDeviceKind.values.toSet()),
 			theme: ThemeData(

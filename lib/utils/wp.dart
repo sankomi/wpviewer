@@ -8,9 +8,18 @@ export "../models/post.dart" show Post;
 class Wp {
 
 	static String? _wpUrl;
+	static String? _homeSlug;
 
 	static void set url(String? url) {
 		_wpUrl = url;
+	}
+
+	static void set homeSlug(String? homeSlug) {
+		_homeSlug = homeSlug;
+	}
+
+	static String? get homeSlug {
+		return _homeSlug;
 	}
 
 	static Future<List<Post>?> getPosts({int page = 1, int perPage = 10}) async {
@@ -34,11 +43,11 @@ class Wp {
 			.toList();
 	}
 
-	static Future<Post?> getPost({required String slug}) async {
+	static Future<Post?> getPost({required String slug, bool page = false}) async {
 		if (_wpUrl == null) return null;
 		String wpUrl = _wpUrl!;
 
-		String url = wpUrl + "/wp-json/wp/v2/posts?slug=${slug}";
+		String url = wpUrl + "/wp-json/wp/v2/${page? 'page': 'post'}s?slug=${slug}";
 		List<dynamic> data = await Request.get(url)
 			.then((res) => res.data as List<dynamic>);
 
@@ -59,6 +68,10 @@ class Wp {
 			.split("/")
 			.where((segment) => segment != "")
 			.last;
+	}
+
+	static Future<Post?> getPage({required String slug}) async {
+		return getPost(slug: slug, page: true);
 	}
 
 }
