@@ -70,6 +70,19 @@ class Wp {
 			.last;
 	}
 
+	static bool isPage(String url) {
+		if (_wpUrl == null) return false;
+		String wpUrl = _wpUrl!;
+
+		if (!url.startsWith(wpUrl)) return false;
+
+		Iterable<String> segments = url.substring(wpUrl.length)
+			.split("/")
+			.where((segment) => segment != "");
+
+		return segments.length == 1;
+	}
+
 	static Future<Post?> getPage({required String slug}) async {
 		return getPost(slug: slug, page: true);
 	}

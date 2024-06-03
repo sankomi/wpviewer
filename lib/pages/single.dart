@@ -77,7 +77,8 @@ class _SingleState extends State<Single> {
 											String? slug = Wp.getSlug(url);
 											if (slug == null) return false;
 
-											Navigator.push(context, Routes.slideIn(() => Single(slug: slug!)));
+											bool page = Wp.isPage(url);
+											Navigator.push(context, Routes.slideIn(() => Single(slug: slug!, page: page)));
 											return true;
 										},
 									),
