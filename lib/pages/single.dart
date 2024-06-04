@@ -26,70 +26,137 @@ class Single extends StatefulWidget {
 
 class _SingleState extends State<Single> {
 
-	late Future<Post?> _postFuture;
+	bool _error = false;
+	bool _notFound = false;
+	Post? _post = null;
 
 	@override
 	void initState() {
+		loadPost();
+	}
+
+	void loadPost() async {
 		setState(() {
-			if (widget.page) {
-				_postFuture = Wp.getPage(slug: widget.slug);
-			} else {
-				_postFuture = Wp.getPost(slug: widget.slug);
-			}
+			_error = false;
+			_notFound = false;
 		});
+
+		Post? post;
+		try {
+			if (widget.page) {
+				post = await Wp.getPage(slug: widget.slug);
+			} else {
+				post = await Wp.getPost(slug: widget.slug);
+			}
+
+			if (post == null) {
+				setState(() => _notFound = true);
+			} else {
+				setState(() => _post = post!);
+			}
+		} on Exception catch (err) {
+			setState(() => _error = true);
+		}
 	}
 
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
 			appBar: AppBar(
-				title: FutureBuilder<Post?>(
-					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<Post?> snapshot) {
-						if (snapshot.connectionState == ConnectionState.done) {
-							if (snapshot.data == null) {
-								return Text("error!");
-							} else {
-								Post post = snapshot.data!;
-								return Text(post.title);
-							}
-						} else {
-							return Text("fectching post...");
-						}
-					},
+				title: _error?
+					Text("error!"):
+						_notFound?
+							Text("not found!"):
+							_post == null?
+								Text("fectching ${widget.page? 'page': 'post'}..."):
+								Text(_post!.title),
 				),
-			),
 			endDrawer: Menu(),
 			body: Container(
-				child: FutureBuilder<Post?>(
-					future: _postFuture,
-					builder: (BuildContext context, AsyncSnapshot<Post?> snapshot) {
-						if (snapshot.connectionState == ConnectionState.done) {
-							if (snapshot.data == null) {
-								return Center(child: Text("error!"));
-							} else {
-								Post post = snapshot.data!;
-
-								return SingleChildScrollView(
-									child: HtmlWidget(
-										post.content,
-										onTapUrl: (url) {
-											String? slug = Wp.getSlug(url);
-											if (slug == null) return false;
-
-											bool page = Wp.isPage(url);
-											Navigator.push(context, Routes.slideIn(() => Single(slug: slug!, page: page)));
-											return true;
-										},
-									),
-								);
-							}
-						} else {
-							return Center(child: CircularProgressIndicator());
-						}
-					},
-				),
 				padding: EdgeInsets.all(10),
+				child: _error?
+					Center(
+						child: Column(
+							mainAxisAlignment: MainAxisAlignment.center,
+							children: [
+								Text("error!"),
+								Container(
+									child: TextButton(
+										child: Text(
+											"retry",
+											style: Theme.of(context).textTheme.bodyMedium,
+										),
+										style: TextButton.styleFrom(
+											shape: RoundedRectangleBorder(
+												borderRadius: BorderRadius.zero,
+											),
+											padding: EdgeInsets.symmetric(
+												vertical: 0,
+												horizontal: 10,
+											),
+										),
+										onPressed: () => loadPost(),
+									),
+									margin: EdgeInsets.only(top: 10),
+									decoration: BoxDecoration(
+										border: Border.all(
+											width: 1,
+											color: Color(0xffcccccc),
+										),
+									),
+								),
+							],
+						),
+					):
+					_notFound?
+						Center(
+							child: Column(
+								mainAxisAlignment: MainAxisAlignment.center,
+								children: [
+									Text("not found!"),
+									Container(
+										child: TextButton(
+											child: Text(
+												"retry",
+												style: Theme.of(context).textTheme.bodyMedium,
+											),
+											style: TextButton.styleFrom(
+												shape: RoundedRectangleBorder(
+													borderRadius: BorderRadius.zero,
+												),
+												padding: EdgeInsets.symmetric(
+													vertical: 0,
+													horizontal: 10,
+												),
+											),
+											onPressed: () => loadPost(),
+										),
+										margin: EdgeInsets.only(top: 10),
+										decoration: BoxDecoration(
+											border: Border.all(
+												width: 1,
+												color: Color(0xffcccccc),
+											),
+										),
+									),
+								],
+							),
+						):
+						_post == null?
+							Center(child: CircularProgressIndicator()):
+							SingleChildScrollView(
+								child: HtmlWidget(
+									_post!.content,
+									onTapUrl: (url) {
+										String? slug = Wp.getSlug(url);
+										if (slug == null) return false;
+
+										bool page = Wp.isPage(url);
+										Navigator.push(context, Routes.slideIn(() => Single(slug: slug!, page: page)));
+										return true;
+									},
+								),
+							),
 			),
 		);
 	}

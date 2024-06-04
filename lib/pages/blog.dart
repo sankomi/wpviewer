@@ -38,6 +38,7 @@ class _PostListState extends State<PostList> {
 	int _currentPage = 1;
 	bool _loading = false;
 	bool _more = true;
+	bool _error = false;
 	List<Post> _posts = [];
 
 	ScrollController _scrollController = ScrollController();
@@ -59,35 +60,81 @@ class _PostListState extends State<PostList> {
 	}
 
 	void loadMore() async {
-		if (_loading || !_more) return;
-		setState(() => _loading = true);
+		setState(() => _error = false);
 
-		List<Post>? fetched = await Wp.getPosts(page: _currentPage);
+		try {
+			if (_loading || !_more) return;
+			setState(() => _loading = true);
 
-		if (fetched != null) {
+			List<Post>? fetched = await Wp.getPosts(page: _currentPage);
+
+			if (fetched != null) {
+				setState(() {
+					_posts.addAll(fetched);
+					_currentPage++;
+
+					_more = _posts.last.pages >= _currentPage;
+					_loading = false;
+				});
+
+				onScroll();
+			}
+		} on Exception catch (err) {
 			setState(() {
-				_posts.addAll(fetched);
-				_currentPage++;
-
-				_more = _posts.last.pages >= _currentPage;
 				_loading = false;
+				_more = false;
+				_error = true;
 			});
-
-			onScroll();
 		}
 	}
 
 	Future<void> refresh() async {
-		_currentPage = 1;
-		_more = true;
-		_posts.clear();
+		setState(() {
+			_currentPage = 1;
+			_more = true;
+			_posts.clear();
+		});
 
 		loadMore();
 	}
 
 	@override
 	Widget build(BuildContext context) {
-		if (_posts.length > 0) {
+		if (_error) {
+			return Center(
+				child: Column(
+					mainAxisAlignment: MainAxisAlignment.center,
+					children: [
+						Text("error!"),
+						Container(
+							child: TextButton(
+								child: Text(
+									"retry",
+									style: Theme.of(context).textTheme.bodyMedium,
+								),
+								style: TextButton.styleFrom(
+									shape: RoundedRectangleBorder(
+										borderRadius: BorderRadius.zero,
+									),
+									padding: EdgeInsets.symmetric(
+										vertical: 0,
+										horizontal: 10,
+									),
+								),
+								onPressed: () => refresh(),
+							),
+							margin: EdgeInsets.only(top: 10),
+							decoration: BoxDecoration(
+								border: Border.all(
+									width: 1,
+									color: Color(0xffcccccc),
+								),
+							),
+						),
+					],
+				),
+			);
+		} else if (_posts.length > 0) {
 			return RefreshIndicator(
 				onRefresh: refresh,
 				child: ListView.separated(
