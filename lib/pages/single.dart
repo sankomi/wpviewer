@@ -35,7 +35,7 @@ class _SingleState extends State<Single> {
 		loadPost();
 	}
 
-	void loadPost() async {
+	Future<void> loadPost() async {
 		setState(() {
 			_error = false;
 			_notFound = false;
@@ -144,17 +144,28 @@ class _SingleState extends State<Single> {
 						):
 						_post == null?
 							Center(child: CircularProgressIndicator()):
-							SingleChildScrollView(
-								child: HtmlWidget(
-									_post!.content,
-									onTapUrl: (url) {
-										String? slug = Wp.getSlug(url);
-										if (slug == null) return false;
+							RefreshIndicator(
+								onRefresh: () => loadPost(),
+								child: LayoutBuilder(
+									builder: (BuildContext context, BoxConstraints constraints) => SingleChildScrollView(
+										physics: AlwaysScrollableScrollPhysics(),
+										child: ConstrainedBox(
+											constraints: BoxConstraints(
+												minHeight: constraints.maxHeight,
+											),
+											child: HtmlWidget(
+												_post!.content,
+												onTapUrl: (url) {
+													String? slug = Wp.getSlug(url);
+													if (slug == null) return false;
 
-										bool page = Wp.isPage(url);
-										Navigator.push(context, Routes.slideIn(() => Single(slug: slug!, page: page)));
-										return true;
-									},
+													bool page = Wp.isPage(url);
+													Navigator.push(context, Routes.slideIn(() => Single(slug: slug!, page: page)));
+													return true;
+												},
+											),
+										),
+									),
 								),
 							),
 			),

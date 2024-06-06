@@ -139,6 +139,7 @@ class _PostListState extends State<PostList> {
 				onRefresh: refresh,
 				child: ListView.separated(
 					controller: _scrollController,
+					physics: AlwaysScrollableScrollPhysics(),
 					itemCount: _posts.length + (_more? 1: 0),
 					itemBuilder: (BuildContext context, int index) {
 						if (index < _posts.length) {
